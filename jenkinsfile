@@ -1,0 +1,31 @@
+pipeline {
+    agent {
+        label 'agent'
+    }
+    tools {
+        // Install the Maven version configured as "M3" and add it to the path.
+        maven "maven"
+    }
+        stages {
+        stage('Build') {
+            steps {
+                // Get some code from a GitHub repository
+                git branch: 'main', url: 'https://github.com/spring-projects/spring-petclinic.git'
+
+                // Run Maven on a Unix agent.
+                sh "mvn clean package"
+
+                // To run Maven on a Windows agent, use
+                // bat "mvn -Dmaven.test.failure.ignore=true clean package"
+            }
+
+            post {
+                // If Maven was able to run the tests, even if some of the test
+                // failed, record the test results and archive the jar file.
+                success {
+                    googleStorageUpload bucket: 'gs://gcp-2021-2-artifacts-dykaliuk', credentialsId: 'gcp-2021-2-phase2-Dykaliuk', pathPrefix: 'target/', pattern: 'target/*.jar'
+                }
+            }
+        }
+    }
+}
